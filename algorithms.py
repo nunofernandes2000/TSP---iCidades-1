@@ -1,170 +1,288 @@
-import math #importar funções da matematica
-import random #importar funções random
+import random
 from libic import *
 from Ficha03 import *
 
-def gerarSucessores(state):
-    successors = []
+def gerarSucessores(estado):
+    """
+    Gera todos os sucessores possíveis a partir de um estado,
+    trocando pares de cidades.
+    """
+    sucessores = []
     
     # Gerar todos os sucessores possiveis
-    for i in range(len(state)):
-        for j in range(i + 1, len(state)):
-            neighbor = state[:]
-            trocaIC(neighbor, i, j)
-            successors.append((neighbor, distCircularIC(neighbor)))
+    for i in range(len(estado)):
+        for j in range(i + 1, len(estado)):
+            vizinho = estado[:]
+            trocaIC(vizinho, i, j)
+            sucessores.append((vizinho, distCircularIC(vizinho)))
             
-    return successors
+    return sucessores
 
 def Greedy(cidadesList, r):
-    #distCircularIC -> custo
-
-    state = cidadesList[:]
-
-    initial_distance = distCircularIC(state)
-
-    iterations = 0
-    while iterations < r:
-        iterations += 1
-        successors = []
-
-        successors = gerarSucessores(state)
-
-        #Escolher o melhor sucessor
-        best_neighbor, best_distance = min(successors, key=lambda x: x[1])
-
-        #Verificar se há melhoria
-        if best_distance >= distCircularIC(state):
+    """
+    Hill Climbing (Greedy) para o problema do TSP.
+    Em cada iteração, escolhe o melhor vizinho dentre todos os possíveis.
+    """
+    # Definir constantes para o novo critério de paragem
+    k = 5  # número de iterações para verificar a melhoria
+    epsilon = 0.001  # valor pequeno para a melhoria mínima
+    
+    # Cria uma cópia da lista de cidades
+    estado = cidadesList[:]
+    
+    # Calcula a distância inicial
+    distanciaInicial = distCircularIC(estado)
+    
+    # Lista para armazenar as melhorias nas últimas k iterações
+    melhoriasRecentes = []
+    
+    iteracoes = 0
+    while iteracoes < r:
+        iteracoes += 1
+        
+        # Distância atual
+        distanciaAtual = distCircularIC(estado)
+        
+        # Gera todos os sucessores possíveis
+        sucessores = gerarSucessores(estado)
+        
+        # Escolhe o melhor sucessor
+        melhorVizinho, melhorDistancia = min(sucessores, key=lambda x: x[1])
+        
+        # Verifica se houve melhoria
+        if melhorDistancia >= distCircularIC(estado):
             break
-
-        state = best_neighbor
-
-    final_distance = distCircularIC(state)
-
-    return initial_distance, final_distance, state
+        
+        # Calcula a melhoria nesta iteração
+        melhoria = distanciaAtual - melhorDistancia
+        
+        # Atualiza o estado
+        estado = melhorVizinho
+        
+        # Registra a melhoria
+        melhoriasRecentes.append(melhoria)
+        
+        # Mantém apenas as últimas k melhorias
+        if len(melhoriasRecentes) > k:
+            melhoriasRecentes.pop(0)
+        
+        # Verifica critério de paragem por epsilon
+        if len(melhoriasRecentes) == k:
+            melhoriaTotal = sum(melhoriasRecentes)
+            if melhoriaTotal < epsilon:
+                break
+    
+    distanciaFinal = distCircularIC(estado)
+    
+    return distanciaInicial, distanciaFinal, estado
 
 def sGreedy(cidadesList, r):
-    state = cidadesList[:]
+    """
+    Stochastic Hill Climbing para o problema do TSP.
+    Em cada iteração, escolhe aleatoriamente um dos b melhores vizinhos.
+    """
+    # Definir constantes para o novo critério de paragem
+    k = 5  # número de iterações para verificar a melhoria
+    epsilon = 0.001  # valor pequeno para a melhoria mínima 
+    b = 10
     
-    initial_distance = distCircularIC(state)
-
-    b = 5
+    # Cria uma cópia da lista de cidades
+    estadoAtual = cidadesList[:]
     
-    iterations = 0
-    while iterations < r:
-        iterations += 1
-        successors = []
+    # Calcula a distância inicial
+    distanciaInicial = distCircularIC(estadoAtual)
+    
+    # Lista para armazenar as melhorias nas últimas k iterações
+    melhoriasRecentes = []
+    
+    iteracoes = 0
+    while iteracoes < r:
+        iteracoes += 1
         
-        successors = gerarSucessores(state)
+        # Distância atual
+        distanciaAtual = distCircularIC(estadoAtual)
         
-        # Ordenar os sucessores pela distância (menor para maior)
-        successors.sort(key=lambda x: x[1])
+        # Gera todos os sucessores possíveis
+        sucessores = gerarSucessores(estadoAtual)
         
-        # Verificar se há sucessores melhores que o atual
-        current_distance = distCircularIC(state)
-        better_successors = [s for s in successors if s[1] < current_distance]
+        # Ordena os sucessores pelo custo (menor para maior)
+        sucessores.sort(key=lambda x: x[1])
         
-        if not better_successors:
-            # Se não houver sucessores melhores, paramos
+        # Seleciona os b melhores sucessores
+        melhoresSucessores = sucessores[:b]
+        
+        # Escolhe aleatoriamente um dos b melhores
+        vizinhoEscolhido, distanciaEscolhida = random.choice(melhoresSucessores)
+        
+        # Verifica se houve melhoria
+        if distanciaEscolhida >= distCircularIC(estadoAtual):
             break
         
-        # Escolher aleatoriamente entre os melhores b sucessores
-        # (ou todos os melhores, se houver menos que b)
-        num_to_consider = min(b, len(better_successors))
-        best_b_successors = better_successors[:num_to_consider]
+        # Calcula a melhoria nesta iteração
+        melhoria = distanciaAtual - distanciaEscolhida
         
-        # Escolher aleatoriamente um dos melhores b sucessores
-        chosen_neighbor, chosen_distance = random.choice(best_b_successors)
-        state = chosen_neighbor
+        # Atualiza o estado
+        estadoAtual = vizinhoEscolhido
+        
+        # Registra a melhoria
+        melhoriasRecentes.append(melhoria)
+        
+        # Mantém apenas as últimas k melhorias
+        if len(melhoriasRecentes) > k:
+            melhoriasRecentes.pop(0)
+        
+        # Verifica critério de paragem por epsilon
+        if len(melhoriasRecentes) == k:
+            melhoriaTotal = sum(melhoriasRecentes)
+            if melhoriaTotal < epsilon:
+                break
     
-    final_distance = distCircularIC(state)
+    distanciaFinal = distCircularIC(estadoAtual)
+    
+    return distanciaInicial, distanciaFinal, estadoAtual
 
-    return initial_distance, final_distance, state 
 
-def pGreedyIC(cidadesList, r):
-    current = cidadesList[:]
+def pGreedy(cidadesList, r):
+    """
+    Partial Hill Climbing (pGreedy) para o problema do TSP.
+    Em cada iteração, considera apenas O(n) sucessores em vez de O(n²).
+    """
+    # Definir constantes para o novo critério de paragem
+    k = 5  # número de iterações para verificar a melhoria
+    epsilon = 0.001  # valor pequeno para a melhoria mínima
     
-    # calcula a distância inicial
-    initial_distance = distCircularIC(current)
+    # Cria uma cópia da lista de cidades
+    estadoAtual = cidadesList[:]
     
-    iterations = 0
-    while iterations < r:
-        iterations += 1
-        improved = False
+    # Calcula a distância inicial
+    distanciaInicial = distCircularIC(estadoAtual)
+    
+    # Lista para armazenar as melhorias nas últimas k iterações
+    melhoriasRecentes = []
+    
+    iteracoes = 0
+    while iteracoes < r:
+        iteracoes += 1
+        melhorou = False
         
-        # numero de cidades
-        n = len(current)
+        # Distância atual antes de qualquer mudança nesta iteração
+        distanciaAtual = distCircularIC(estadoAtual)
         
-        # esclhe uma posição random para trocar
-        fixed_position = random.randint(0, n-1)
+        # Número de cidades
+        n = len(estadoAtual)
         
-        # Try swapping with each other position (O(n) successors)
+        # Escolhe uma posição aleatória para trocar
+        posicaoFixa = random.randint(0, n-1)
+        
+        # Tenta trocar com cada outra posição (O(n) sucessores)
         for j in range(n):
-            if j == fixed_position:
+            if j == posicaoFixa:
                 continue
                 
-            # Create a new path by swapping cities at positions fixed_position and j
-            neighbor = current[:]
-            trocaIC(neighbor, fixed_position, j)
+            # Cria um novo caminho trocando as cidades nas posições posicaoFixa e j
+            vizinho = estadoAtual[:]
+            trocaIC(vizinho, posicaoFixa, j)
             
-            # Calculate the cost of the new path
-            new_distance = distCircularIC(neighbor)
+            # Calcula o custo do novo caminho
+            novaDistancia = distCircularIC(vizinho)
             
-            # If the new path is better, update current path
-            if new_distance < distCircularIC(current):
-                current = neighbor
-                improved = True
-                break  # First improvement strategy
+            # Se o novo caminho for melhor, atualiza o caminho atual
+            if novaDistancia < distanciaAtual:
+                # Calcular a melhoria antes de atualizar
+                melhoria = distanciaAtual - novaDistancia
+                
+                # Atualizar o estado
+                estadoAtual = vizinho
+                melhorou = True
+                
+                # Registra a melhoria
+                melhoriasRecentes.append(melhoria)
+                
+                # Mantém apenas as últimas k melhorias
+                if len(melhoriasRecentes) > k:
+                    melhoriasRecentes.pop(0)
+                
+                break  # Estratégia de primeira melhoria
         
-        # If no improvement was found, we can stop
-        if not improved:
+        # Se não houver melhoria, podemos parar
+        if not melhorou:
             break
-    
-    final_distance = distCircularIC(current)
-    
-    return initial_distance, final_distance, current
-
-def rGreedyIC(cidadesList, r):
-    # Numero de restarts
-    num_restarts = 10
-    
-    # Keep track of the initial state for return purposes
-    original_cities = cidadesList[:]
-    initial_distance = distCircularIC(original_cities)
-    
-    # Save the best solution across all restarts
-    best_state = original_cities[:]
-    best_distance = initial_distance
-    
-    # Perform multiple restarts
-    for restart in range(num_restarts):
-        # For the first restart, use the original list
-        # For subsequent restarts, use a random permutation
-        if restart == 0:
-            current_state = original_cities[:]
-        else:
-            current_state = original_cities[:]
-            random.shuffle(current_state)
-        
-        # Run standard hill climbing
-        iterations = 0
-        while iterations < r:
-            iterations += 1
-            successors = []
             
-            successors = gerarSucessores(current_state)
-            
-            # escolhe o melhor sucessor
-            best_neighbor, best_neighbor_distance = min(successors, key=lambda x: x[1])
-            
-            # veerifica se houve melhoria
-            if best_neighbor_distance >= distCircularIC(current_state):
+        # Verifica critério de paragem por epsilon
+        if len(melhoriasRecentes) == k:
+            melhoriaTotal = sum(melhoriasRecentes)
+            if melhoriaTotal < epsilon:
                 break
-            
-            current_state = best_neighbor
-        
-        current_distance = distCircularIC(current_state)
-        if current_distance < best_distance:
-            best_state = current_state[:]
-            best_distance = current_distance
     
-    return initial_distance, best_distance, best_state
+    distanciaFinal = distCircularIC(estadoAtual)
+    
+    return distanciaInicial, distanciaFinal, estadoAtual
+
+def rGreedy(cidadesList, r):
+    """
+    Algoritmo de Reinício para o problema do TSP.
+    Realiza múltiplos reinícios do algoritmo escolhido, neste caso o SGreedy.
+    """
+    # Definir constantes para o novo critério de paragem
+    k = 5  # número de iterações para verificar a melhoria
+    epsilon = 0.001  # valor pequeno para a melhoria mínima
+    
+    # Definir número máximo de reinícios
+    numReiniciosMax = 10
+    
+    # Manter o estado inicial para fins de retorno
+    cidadesOriginais = cidadesList[:]
+    distanciaInicial = distCircularIC(cidadesOriginais)
+    
+    # Guardar a melhor solução entre todos os reinícios
+    melhorEstado = cidadesOriginais[:]
+    melhorDistancia = distanciaInicial
+    
+    # Lista para armazenar as melhorias dos últimos k reinícios
+    melhoriasReiniciosRecentes = []
+    
+    # Realizar múltiplos reinícios
+    for contadorReiniciosFeitos in range(numReiniciosMax):
+        # Para o primeiro reinício, usar a lista original
+        # Para os reinícios subsequentes, usar uma permutação aleatória
+        if contadorReiniciosFeitos == 0:
+            cidadesAtuais = cidadesOriginais[:]
+        else:
+            cidadesAtuais = cidadesOriginais[:]
+            random.shuffle(cidadesAtuais)
+        
+        # Regista a distância do melhor estado antes deste reinício
+        distanciaAnterior = melhorDistancia
+        
+        # Chamar o algoritmo escolhido com a lista atual
+        _, distanciaAtual, estadoAtual = sGreedy(cidadesAtuais, r)
+        
+        # Após a execução, verificar se este reinício produziu uma solução melhor
+        if distanciaAtual < melhorDistancia:
+            melhorEstado = estadoAtual[:]
+            melhorDistancia = distanciaAtual
+            
+            # Calcular a melhoria obtida com este reinício
+            melhoria = distanciaAnterior - melhorDistancia
+            
+            # Registra a melhoria deste reinício
+            melhoriasReiniciosRecentes.append(melhoria)
+            
+            # Mantém apenas as últimas k melhorias
+            if len(melhoriasReiniciosRecentes) > k:
+                melhoriasReiniciosRecentes.pop(0)
+            
+            # Verifica critério de paragem por epsilon
+            if len(melhoriasReiniciosRecentes) == k:
+                melhoriaTotal = sum(melhoriasReiniciosRecentes)
+                if melhoriaTotal < epsilon:
+                    break
+        else:
+            # Se não houver melhoria neste reinício, registra zero
+            melhoriasReiniciosRecentes.append(0)
+            
+            # Mantém apenas as últimas k melhorias
+            if len(melhoriasReiniciosRecentes) > k:
+                melhoriasReiniciosRecentes.pop(0)
+    
+    return distanciaInicial, melhorDistancia, melhorEstado

@@ -29,10 +29,9 @@ if len(sys.argv) > 1:
     iter = int(sys.argv[1])
     
 st = time.process_time()
-#(ci, cf, lopt) = optDistCircularIC(l,iter)
-#(ci, cf, lopt) = hillClimbingGreedyIC(l,iter)
-#(ci, cf, lopt) = stochasticHillClimbingIC(l,iter)
-(ci, cf, lopt) = sGreedy(l,iter)
+#(ci, cf, lopt) = Greedy(l,iter)
+# Usando restart
+(ci, cf, lopt) = rGreedy(l, iter)
 et = time.process_time()
 print("CPU time: ", (et - st)*1000, "ms")
 
