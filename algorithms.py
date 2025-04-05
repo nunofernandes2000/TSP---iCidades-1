@@ -18,6 +18,15 @@ def gerarSucessores(estado):
             
     return sucessores
 
+
+def optDistCircularIC(cidadesList, r):
+    distOriginal = distCircularIC(cidadesList)
+    novaLista = melhoraDistCircularIC(cidadesList, r)
+    distNova = distCircularIC(novaLista)
+
+    return distOriginal, distNova, novaLista
+
+
 def Greedy(cidadesList, r):
     """
     Hill Climbing (Greedy) para o problema do TSP.
