@@ -69,5 +69,3 @@ Contributions are welcome! If you have suggestions or improvements, feel free to
 This project is licensed under the MIT License. See the `LICENSE` file for more details.
 
 ---
-
-> _Note: This README was generated based on the current state of the repository. Make sure it reflects the actual structure and capabilities of the project._
