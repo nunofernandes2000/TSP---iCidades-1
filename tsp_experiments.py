@@ -86,6 +86,52 @@ def save_results_to_excel(all_results):
     filename = "tsp_results_all.xlsx"
     writer = pd.ExcelWriter(filename, engine='xlsxwriter')
     
+    # Get workbook and create formats
+    workbook = writer.book
+    
+    # Format for headers
+    header_format = workbook.add_format({
+        'bold': True,
+        'text_wrap': True,
+        'valign': 'top',
+        'fg_color': '#D7E4BC',
+        'border': 1,
+        'align': 'center',
+    })
+    
+    # Format for numeric values
+    number_format = workbook.add_format({
+        'num_format': '0.00',
+        'align': 'center',
+    })
+    
+    # Format for percentage values
+    percent_format = workbook.add_format({
+        'num_format': '0.00%',
+        'align': 'center',
+    })
+    
+    # Format for time values
+    time_format = workbook.add_format({
+        'num_format': '0.0000',
+        'align': 'center',
+    })
+    
+    # Format for algorithm names - different algorithms get different colors
+    algorithm_formats = {
+        'Greedy': workbook.add_format({'bg_color': '#E6F0FF', 'align': 'center'}),
+        'sGreedy': workbook.add_format({'bg_color': '#F2E6FF', 'align': 'center'}),
+        'pGreedy': workbook.add_format({'bg_color': '#FFE6E6', 'align': 'center'}),
+        'rGreedy': workbook.add_format({'bg_color': '#E6FFE6', 'align': 'center'}),
+        'optDistCircularIC': workbook.add_format({'bg_color': '#FFF2CC', 'align': 'center'})
+    }
+    
+    # Format for iterations
+    iteration_format = workbook.add_format({
+        'align': 'center',
+        'bold': True
+    })
+    
     for instance_name, results in all_results.items():
         # Get instance name without extension for the sheet name
         sheet_name = instance_name.split('.')[0]
@@ -108,7 +154,7 @@ def save_results_to_excel(all_results):
                     avg_time, 
                     avg_initial_cost, 
                     avg_final_cost,
-                    avg_improvement
+                    avg_improvement / 100  # Convert to decimal for percentage formatting
                 ])
 
         df = pd.DataFrame(data, columns=[
@@ -117,12 +163,63 @@ def save_results_to_excel(all_results):
             "Average Time (s)", 
             "Average Initial Cost",
             "Average Final Cost",
-            "Improvement (%)"
+            "Improvement"
         ])
         
-        # Write data to a sheet named after the instance (e.g., "eil51", "berlin52")
+        # Write data to a sheet named after the instance
         df.to_excel(writer, sheet_name=sheet_name, index=False)
-        print(f"Added results for {instance_name} to sheet '{sheet_name}'")
+        worksheet = writer.sheets[sheet_name]
+        
+        # Set column widths
+        worksheet.set_column('A:A', 18)  # Algorithm
+        worksheet.set_column('B:B', 12)  # Iterations
+        worksheet.set_column('C:C', 16)  # Average Time
+        worksheet.set_column('D:D', 18)  # Average Initial Cost
+        worksheet.set_column('E:E', 18)  # Average Final Cost
+        worksheet.set_column('F:F', 14)  # Improvement
+
+        # Set up header row
+        for col_num, value in enumerate(df.columns.values):
+            worksheet.write(0, col_num, value, header_format)
+        
+        # Apply conditional formatting to highlight the best results
+        worksheet.conditional_format('C2:C100', {'type': '3_color_scale',
+                                               'min_color': '#63BE7B',  # Green for low (good) times
+                                               'mid_color': '#FFEB84',
+                                               'max_color': '#F8696B'})  # Red for high (bad) times
+                                           
+        worksheet.conditional_format('E2:E100', {'type': '3_color_scale',
+                                               'min_color': '#63BE7B',  # Green for low (good) final costs
+                                               'mid_color': '#FFEB84',
+                                               'max_color': '#F8696B'})  # Red for high (bad) final costs
+                                               
+        worksheet.conditional_format('F2:F100', {'type': '3_color_scale',
+                                               'min_color': '#F8696B',  # Red for low (bad) improvement
+                                               'mid_color': '#FFEB84',
+                                               'max_color': '#63BE7B'})  # Green for high (good) improvement
+        
+        # Apply formatting to each row
+        for row_num, row in enumerate(df.values, 1):
+            algorithm = row[0]
+            # Apply algorithm-specific format to the algorithm cell
+            worksheet.write(row_num, 0, algorithm, algorithm_formats[algorithm])
+            # Apply iteration format
+            worksheet.write(row_num, 1, row[1], iteration_format)
+            # Apply time format
+            worksheet.write(row_num, 2, row[2], time_format)
+            # Apply number format to costs
+            worksheet.write(row_num, 3, row[3], number_format)
+            worksheet.write(row_num, 4, row[4], number_format)
+            # Apply percentage format to improvement
+            worksheet.write(row_num, 5, row[5], percent_format)
+        
+        # Add a filter to easily sort and filter data
+        worksheet.autofilter(0, 0, len(df), len(df.columns) - 1)
+        
+        # Freeze the header row
+        worksheet.freeze_panes(1, 0)
+        
+        print(f"Added formatted results for {instance_name} to sheet '{sheet_name}'")
     
     # Close the writer after all sheets have been added
     writer.close()
