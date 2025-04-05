@@ -35,7 +35,8 @@ def run_experiments(filename, iterations_list, num_runs):
         "Greedy": Greedy,
         "sGreedy": sGreedy,
         "pGreedy": pGreedy,
-        "rGreedy": rGreedy
+        "rGreedy": rGreedy,
+        "optDistCircularIC": optDistCircularIC 
     }
 
     for alg_name, alg_func in algorithms.items():
