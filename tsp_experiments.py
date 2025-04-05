@@ -80,11 +80,16 @@ def run_experiments(filename, iterations_list, num_runs):
     
     return results
 
-def save_results_to_excel(all_results, filename="tsp_custom_results.xlsx"):
-    """Saves the results to an Excel file."""
+def save_results_to_excel(all_results):
+    """Saves the results to a single Excel file with separate sheets for each TSP instance."""
+    # Create a single Excel file for all instances
+    filename = "tsp_results_all.xlsx"
     writer = pd.ExcelWriter(filename, engine='xlsxwriter')
-
+    
     for instance_name, results in all_results.items():
+        # Get instance name without extension for the sheet name
+        sheet_name = instance_name.split('.')[0]
+        
         data = []
         for algorithm, iterations_data in results.items():
             for iterations, runs in iterations_data.items():
@@ -114,10 +119,14 @@ def save_results_to_excel(all_results, filename="tsp_custom_results.xlsx"):
             "Average Final Cost",
             "Improvement (%)"
         ])
-        df.to_excel(writer, sheet_name=instance_name, index=False)
-
+        
+        # Write data to a sheet named after the instance (e.g., "eil51", "berlin52")
+        df.to_excel(writer, sheet_name=sheet_name, index=False)
+        print(f"Added results for {instance_name} to sheet '{sheet_name}'")
+    
+    # Close the writer after all sheets have been added
     writer.close()
-    print(f"\nResults saved to {filename}")
+    print(f"\nAll results saved to {filename}")
 
 # --- Main ---
 if __name__ == "__main__":

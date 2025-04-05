@@ -17,7 +17,7 @@ w = windowIC(800)
 l = readTSP2ListIC("berlin52.tsp")
 #l = readTSP2ListICOpt("berlin52.tsp", "berlin52.opt.tour")
 
-random.shuffle(l)
+random.shuffle(l) # baralha a lista de cidades
 
 print("Distancia INICIAL:", distCircularIC(l))
 drawIC(l,w)
