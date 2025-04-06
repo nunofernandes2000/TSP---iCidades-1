@@ -1,3 +1,7 @@
+"""""
+	21635 -- Nuno Fernandes
+	21986 -- Rafael Carvalho	
+"""
 import random
 from libic import *
 from Ficha03 import *
